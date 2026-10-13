@@ -145,50 +145,6 @@ export const subsystems: Subsystem[] = [
     ],
     lessons: ['What worked.', 'What we would change next time.'],
   },
-  {
-    id: 'climber',
-    name: 'Climber',
-    tagline: 'One line on what makes it ours.',
-    summary: 'Describe the endgame mechanism: reach, lift method, and how it stays reliable.',
-    nodeMatch: ['climb', 'hook', 'winch'],
-    specs: [
-      { label: 'Reach', value: 'TBD' },
-      { label: 'Lift method', value: 'TBD' },
-      { label: 'Motors', value: 'TBD' },
-      { label: 'Climb time', value: 'TBD' },
-    ],
-    alternatives: [
-      { name: 'Option A', pros: 'Why it was attractive.', cons: 'Why we passed.' },
-      { name: 'Option B (chosen)', pros: 'Why it won.', cons: 'The trade-off we accepted.', chosen: true },
-    ],
-    iterations: [
-      { label: 'V1', note: 'First prototype and what we learned.' },
-      { label: 'Final', note: 'What competed.' },
-    ],
-    lessons: ['What worked.', 'What we would change next time.'],
-  },
-  {
-    id: 'electronics',
-    name: 'Electronics',
-    tagline: 'One line on what makes it ours.',
-    summary: 'Describe the electrical layout: power distribution, controllers, sensors, wiring strategy, and serviceability.',
-    nodeMatch: ['electronics', 'electrical', 'pdh', 'battery', 'radio'],
-    specs: [
-      { label: 'Controller', value: 'roboRIO' },
-      { label: 'Coprocessors', value: 'TBD' },
-      { label: 'CAN buses', value: 'TBD' },
-      { label: 'Cameras', value: 'TBD' },
-    ],
-    alternatives: [
-      { name: 'Option A', pros: 'Why it was attractive.', cons: 'Why we passed.' },
-      { name: 'Option B (chosen)', pros: 'Why it won.', cons: 'The trade-off we accepted.', chosen: true },
-    ],
-    iterations: [
-      { label: 'V1', note: 'First layout and what we learned.' },
-      { label: 'Final', note: 'What competed.' },
-    ],
-    lessons: ['What worked.', 'What we would change next time.'],
-  },
 ]
 
 export const software = {

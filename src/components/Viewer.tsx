@@ -16,8 +16,6 @@ const explodeDirs: Record<string, [number, number, number]> = {
   intake: [1, 0, 0],
   indexer: [0, 0.6, 0],
   shooter: [0, 1.2, 0],
-  climber: [-1, 0.4, 0],
-  electronics: [0, 0.2, 1],
 }
 
 function useGlbAvailable() {
@@ -81,8 +79,6 @@ function PlaceholderRobot(p: Props) {
       <Part {...c} group="indexer" position={[0.05, 0.3, 0]} size={[0.5, 0.2, 0.55]} />
       <Part {...c} group="shooter" shape="cyl" position={[-0.05, 0.55, 0]} size={[0.22, 0.12, 0.22]} />
       <Part {...c} group="shooter" position={[0.05, 0.68, 0]} size={[0.38, 0.14, 0.2]} />
-      <Part {...c} group="climber" position={[-0.42, 0.55, 0]} size={[0.07, 0.8, 0.5]} />
-      <Part {...c} group="electronics" position={[-0.2, 0.22, 0.28]} size={[0.3, 0.1, 0.18]} />
     </group>
   )
 }
