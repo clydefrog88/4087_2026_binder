@@ -104,7 +104,7 @@ function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
         const mesh = o as THREE.Mesh
         if (!mesh.isMesh) return
         const mat = ((Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.MeshStandardMaterial).clone()
-        mat.roughness = 0.55
+        mat.roughness = 0.75
         mat.metalness = 0
         mesh.material = mat
         entries.push({ mesh, group })
@@ -149,7 +149,7 @@ function StudioEnv() {
     const pmrem = new THREE.PMREMGenerator(gl)
     const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = env
-    scene.environmentIntensity = 0.85
+    scene.environmentIntensity = 0.4
     return () => {
       scene.environment = null
       env.dispose()
@@ -173,8 +173,8 @@ export function Viewer(props: Props & { autoRotate?: boolean }) {
     <div className="viewer" aria-label="3D robot viewer">
       <Canvas flat shadows camera={{ position: [1.9, 1.4, 2.2], fov: 38 }} dpr={[1, 2]}>
         <StudioEnv />
-        <hemisphereLight args={['#ffffff', '#9a93a8', 0.25]} />
-        <directionalLight position={[3, 5, 2]} intensity={1.1} castShadow />
+        <hemisphereLight args={['#ffffff', '#8a8496', 0.12]} />
+        <directionalLight position={[3, 5, 2]} intensity={0.9} castShadow />
         <Suspense fallback={null}>
           <Spin enabled={props.autoRotate ?? false}>
             {state === 'yes' ? <GlbRobot url={url} {...props} /> : <PlaceholderRobot {...props} />}
