@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { OrbitControls, useGLTF, ContactShadows } from '@react-three/drei'
@@ -149,6 +149,10 @@ function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
         const mesh = o as THREE.Mesh
         if (!mesh.isMesh) return
         const mat = ((Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.MeshStandardMaterial).clone()
+        // Onshape writes its sRGB color values into glTF's baseColorFactor, which glTF defines as
+        // linear. Read as linear they come out much lighter than in Onshape (washed out, grays
+        // instead of blacks), so reinterpret the numbers as sRGB.
+        mat.color.setRGB(mat.color.r, mat.color.g, mat.color.b, THREE.SRGBColorSpace)
         mat.roughness = 0.75
         mat.metalness = 0
         mesh.material = mat
@@ -195,7 +199,7 @@ function StudioEnv() {
     const pmrem = new THREE.PMREMGenerator(gl)
     const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = env
-    scene.environmentIntensity = 0.15
+    scene.environmentIntensity = 0.2
     return () => {
       scene.environment = null
       env.dispose()
@@ -215,12 +219,13 @@ function Spin({ children, enabled }: { children: React.ReactNode; enabled: boole
 
 export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () => void }) {
   const { state, url } = useGlbAvailable()
+  const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   return (
     <div className="viewer" aria-label="3D robot viewer">
       <Canvas flat shadows camera={{ position: [1.9, 1.4, 2.2], fov: 38 }} dpr={[1, 2]}>
         <StudioEnv />
         <hemisphereLight args={['#ffffff', '#8a8496', 0.03]} />
-        <directionalLight position={[3, 5, 2]} intensity={3} castShadow />
+        <directionalLight position={[3, 5, 2]} intensity={3.4} castShadow />
         {/* Weak back-left light so shaded sides keep some shape without lifting the blacks. */}
         <directionalLight position={[-4, 2, -3]} intensity={0.7} />
         {/* Faint fill from below so the underside is readable when orbiting under the robot. */}
@@ -232,12 +237,20 @@ export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () =>
           <ContactShadows position={[0, 0, 0]} opacity={0.45} scale={4} blur={2.4} far={2} />
         </Suspense>
         <OrbitControls
-          enablePan={false}
+          ref={controls}
+          enablePan
           minDistance={1.2}
           maxDistance={6}
           onStart={props.onInteract}
         />
       </Canvas>
+      <button type="button" className="chip viewer-reset" onClick={() => controls.current?.reset()}>
+        Reset view
+      </button>
+      <span className="viewer-hint">
+        <span className="hint-mouse">Drag: orbit · Scroll: zoom · Right-drag: pan</span>
+        <span className="hint-touch">Drag: orbit · Pinch: zoom · Two fingers: pan</span>
+      </span>
       {state === 'no' && <span className="viewer-note">Placeholder model. Add public/models/robot.glb</span>}
     </div>
   )

@@ -45,6 +45,8 @@ All viewer settings are constants in `src/components/Viewer.tsx`:
 
 - Lighting: `environmentIntensity` in `StudioEnv`, plus the `hemisphereLight` and `directionalLight` intensities in `Viewer`.
 - Surface finish: `mat.roughness` and `mat.metalness` in `GlbRobot`.
+- Colors: Onshape writes sRGB color values into glTF's linear color field. `GlbRobot` reinterprets them as sRGB (`mat.color.setRGB(..., SRGBColorSpace)`) so colors match Onshape's own viewer. Remove that line only if you switch to an exporter that writes true linear colors.
+- Camera: orbit, zoom and pan are on (`OrbitControls` in `Viewer`); the Reset view button restores the starting camera.
 - Ghost look: `GHOST_OPACITY`. Highlight color: `ACCENT`.
 - Flicker between flush parts: `Z_TIERS`, `Z_FACTOR_STEP`, `Z_UNITS_STEP` (depth bias by part size).
 - Parts that always win where flush with another part (currently the red `Bumpers`): `ALWAYS_ON_TOP`. Add exact part names to the list to give another part priority.

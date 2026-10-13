@@ -79,7 +79,11 @@ dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; }
 .links { display: flex; flex-wrap: wrap; gap: 8px; }
 .hero-stage { box-shadow: 0 20px 50px -30px color-mix(in srgb, var(--primary) 45%, transparent); background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; }
 .viewer { position: relative; height: clamp(320px, 56vh, 560px); background: radial-gradient(circle at 50% 35%, var(--viewer-center), var(--viewer-edge) 75%); }
-.viewer canvas { display: block; touch-action: pan-y; }
+.viewer canvas { display: block; touch-action: none; }
+.viewer-reset { position: absolute; top: 10px; right: 10px; background: color-mix(in srgb, var(--surface) 85%, transparent); backdrop-filter: blur(6px); }
+.viewer-hint { position: absolute; right: 12px; bottom: 10px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); pointer-events: none; text-align: right; }
+@media (hover: none) { .hint-mouse { display: none; } }
+@media (hover: hover) { .hint-touch { display: none; } }
 .viewer-note { position: absolute; left: 12px; bottom: 10px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
 .controls { padding: 14px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -165,6 +169,7 @@ tr:last-child td { border-bottom: 0; }
   .hero { min-height: 0; background: none; grid-template-columns: 1fr; }
   .viewer { height: 80px; background: none; }
   .viewer canvas { display: none; }
+  .viewer-reset, .viewer-hint { display: none; }
   .viewer::after { content: '3D model available on the web version'; color: #555; font-size: 0.85rem; }
   .block { padding: 24px 0; break-inside: avoid-page; }
   .panel { animation: none; break-inside: avoid; margin-bottom: 16px; }
