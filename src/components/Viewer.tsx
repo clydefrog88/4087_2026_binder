@@ -83,42 +83,59 @@ function PlaceholderRobot(p: Props) {
   )
 }
 
+type Entry = { mesh: THREE.Mesh; group: string | null }
+type Node = { obj: THREE.Object3D; group: string; base: THREE.Vector3 }
+
 function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
-  const { scene } = useGLTF(url)
-  const model = useMemo(() => scene.clone(true), [scene])
-  const entries = useMemo(() => {
-    const out: { mesh: THREE.Mesh; group: string | null; base: THREE.Vector3 }[] = []
-    model.traverse((o) => {
-      const mesh = o as THREE.Mesh
-      if (!mesh.isMesh) return
-      let group: string | null = null
-      for (let n: THREE.Object3D | null = mesh; n && !group; n = n.parent) {
-        const name = n.name.toLowerCase()
-        const hit = subsystems.find((s) => s.nodeMatch.some((m) => name.includes(m)))
-        if (hit) group = hit.id
-      }
-      mesh.material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material).clone()
-      out.push({ mesh, group, base: mesh.position.clone() })
-    })
-    return out
-  }, [model])
+  const { scene } = useGLTF(url, false)
+  const { model, entries, nodes } = useMemo(() => {
+    const model = scene.clone(true)
+    const entries: Entry[] = []
+    const nodes: Node[] = []
+    // Onshape exports Z-up with the subsystems as direct children of the "Robot" node.
+    const robot = model.getObjectByName('Robot') ?? model
+    for (const child of robot.children) {
+      const name = child.name.toLowerCase()
+      const hit = subsystems.find((x) => x.nodeMatch.some((m) => name.includes(m)))
+      const group = hit ? hit.id : null
+      if (hit) nodes.push({ obj: child, group: hit.id, base: child.position.clone() })
+      child.traverse((o) => {
+        const mesh = o as THREE.Mesh
+        if (!mesh.isMesh) return
+        mesh.material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material).clone()
+        entries.push({ mesh, group })
+      })
+    }
+    // Center on the footprint and sit on the floor (model space is Z-up).
+    const box = new THREE.Box3().setFromObject(model)
+    const c = box.getCenter(new THREE.Vector3())
+    model.position.set(-c.x, -c.y, -box.min.z)
+    return { model, entries, nodes }
+  }, [scene])
 
   useEffect(() => {
-    for (const { mesh, group, base } of entries) {
+    for (const { mesh, group } of entries) {
       const mat = mesh.material as THREE.MeshStandardMaterial
-      const s = group ? styleFor(group, selected, mode) : { visible: selected === null, opacity: 1, color: BASE_COLOR }
+      const s = group ? styleFor(group, selected, mode) : { visible: false, opacity: 1 }
       mesh.visible = s.visible
       mat.transparent = s.opacity < 1
       mat.opacity = s.opacity
       mat.depthWrite = s.opacity >= 1
       if (selected && group === selected) mat.emissive.set('#0a2a06')
       else mat.emissive.set('#000000')
-      const dir = group ? explodeDirs[group] ?? [0, 0, 0] : [0, 0, 0]
-      mesh.position.set(base.x + dir[0] * explode, base.y + dir[1] * explode, base.z + dir[2] * explode)
     }
-  }, [entries, selected, mode, explode])
+    for (const { obj, group, base } of nodes) {
+      // Explode directions are defined in world space (Y-up); convert to the Z-up model space.
+      const d = explodeDirs[group] ?? [0, 0, 0]
+      obj.position.set(base.x + d[0] * explode, base.y - d[2] * explode, base.z + d[1] * explode)
+    }
+  }, [entries, nodes, selected, mode, explode])
 
-  return <primitive object={model} />
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]}>
+      <primitive object={model} />
+    </group>
+  )
 }
 
 function Spin({ children, enabled }: { children: React.ReactNode; enabled: boolean }) {
