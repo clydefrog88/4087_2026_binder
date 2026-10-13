@@ -221,6 +221,8 @@ export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () =>
         <StudioEnv />
         <hemisphereLight args={['#ffffff', '#8a8496', 0.12]} />
         <directionalLight position={[3, 5, 2]} intensity={0.9} castShadow />
+        {/* Faint fill from below so the underside is readable when orbiting under the robot. */}
+        <directionalLight position={[-2, -3, 2]} intensity={0.35} />
         <Suspense fallback={null}>
           <Spin enabled={props.autoRotate ?? false}>
             {state === 'yes' ? <GlbRobot url={url} {...props} /> : <PlaceholderRobot {...props} />}
@@ -231,7 +233,6 @@ export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () =>
           enablePan={false}
           minDistance={1.2}
           maxDistance={6}
-          maxPolarAngle={Math.PI / 2.05}
           onStart={props.onInteract}
         />
       </Canvas>
