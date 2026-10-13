@@ -95,6 +95,21 @@ const Z_TIERS = 10 // number of size tiers (more tiers = fewer ties between simi
 const Z_FACTOR_STEP = -0.5 // slope-scaled bias per tier
 const Z_UNITS_STEP = -1 // constant bias per tier
 
+// Parts that must win wherever they are flush with another part, regardless of size. The bumper is
+// the largest part, so the size rule above would otherwise let the small parts it overlaps show
+// through it. The bias is a fraction of a millimeter, so it only decides near-coplanar contact and
+// never makes the part show through anything that is genuinely behind it.
+const ALWAYS_ON_TOP = ['bumpers'] // exact part names, case-insensitive
+const TOP_FACTOR = -2
+const TOP_UNITS = -100
+
+function isAlwaysOnTop(obj: THREE.Object3D) {
+  for (let o: THREE.Object3D | null = obj; o; o = o.parent) {
+    if (ALWAYS_ON_TOP.includes(o.name.trim().toLowerCase())) return true
+  }
+  return false
+}
+
 function applyDepthBias(model: THREE.Object3D, entries: Entry[]) {
   model.updateMatrixWorld(true)
   const box = new THREE.Box3()
@@ -108,6 +123,13 @@ function applyDepthBias(model: THREE.Object3D, entries: Entry[]) {
     mat.polygonOffsetFactor = Z_FACTOR_STEP * tier
     mat.polygonOffsetUnits = Z_UNITS_STEP * tier
   })
+  for (const { mesh } of entries) {
+    if (!isAlwaysOnTop(mesh)) continue
+    const mat = mesh.material as THREE.Material
+    mat.polygonOffset = true
+    mat.polygonOffsetFactor = TOP_FACTOR
+    mat.polygonOffsetUnits = TOP_UNITS
+  }
 }
 
 function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {

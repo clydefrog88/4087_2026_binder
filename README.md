@@ -46,5 +46,6 @@ All viewer settings are constants in `src/components/Viewer.tsx`:
 - Surface finish: `mat.roughness` and `mat.metalness` in `GlbRobot`.
 - Ghost look: `GHOST_OPACITY`. Highlight color: `ACCENT`.
 - Flicker between flush parts: `Z_TIERS`, `Z_FACTOR_STEP`, `Z_UNITS_STEP` (depth bias by part size).
+- Parts that always win where flush with another part (currently the red `Bumpers`): `ALWAYS_ON_TOP`. Add exact part names to the list to give another part priority.
 
 For instant feedback, run `bun run dev` on your own machine and edit these values; the page updates on save.
