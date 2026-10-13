@@ -19,6 +19,7 @@ Everything on the page comes from `src/content.ts`. All current text is placehol
 
 - Colors and fonts: tokens at the top of `src/theme.css` (purple and green sampled from the VoodooScout logo).
 - Logos: `public/logo-full.png` (hero) and `public/logo-icon.png` (nav and favicon). Paths are set in `team` in `src/content.ts`.
+- Dark mode: the `:root[data-theme="dark"]` block in `src/theme.css`. The nav toggle saves the choice in the browser and the first visit follows the system setting. The logo sits on a light badge in dark mode because it is dark purple.
 
 ## Add the robot CAD
 

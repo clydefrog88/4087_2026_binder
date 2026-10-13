@@ -36,7 +36,25 @@ function useScrollSpy(ids: string[]) {
   return active
 }
 
-function Nav({ active }: { active: string }) {
+function useDarkMode() {
+  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0f0a16' : '#f7f5fa')
+  }, [dark])
+  const toggle = () => {
+    const next = !dark
+    try {
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+    } catch {
+      // Private mode or blocked storage: the choice just isn't remembered.
+    }
+    setDark(next)
+  }
+  return { dark, toggle }
+}
+
+function Nav({ active, dark, onToggleTheme }: { active: string; dark: boolean; onToggleTheme: () => void }) {
   return (
     <header className="nav">
       <a className="brand" href="#robot" aria-label={`Team ${team.number} home`}>
@@ -48,7 +66,24 @@ function Nav({ active }: { active: string }) {
           <a key={s.id} href={`#${s.id}`} className={active === s.id ? 'on' : ''}>{s.label}</a>
         ))}
       </nav>
-      <button className="btn ghost" onClick={() => window.print()}>Print</button>
+      <button
+        className="btn ghost theme-toggle"
+        onClick={onToggleTheme}
+        aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={dark ? 'Light mode' : 'Dark mode'}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {dark ? (
+            <>
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+            </>
+          ) : (
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+          )}
+        </svg>
+      </button>
+      <button className="btn ghost print-btn" onClick={() => window.print()}>Print</button>
     </header>
   )
 }
@@ -254,9 +289,10 @@ function Resources() {
 
 export default function App() {
   const active = useScrollSpy(sections.map((s) => s.id))
+  const { dark, toggle } = useDarkMode()
   return (
     <>
-      <Nav active={active} />
+      <Nav active={active} dark={dark} onToggleTheme={toggle} />
       <main>
         <Hero />
         <Overview />
