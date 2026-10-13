@@ -57,6 +57,9 @@ function Hero() {
   const [selected, setSelected] = useState<string | null>(null)
   const [mode, setMode] = useState<ViewMode>('ghost')
   const [explode, setExplode] = useState(0)
+  // Once the visitor touches the model or any control, the idle spin stops for good.
+  const [touched, setTouched] = useState(false)
+  const touch = () => setTouched(true)
   return (
     <section id="robot" className="hero">
       <div className="hero-copy">
@@ -76,24 +79,24 @@ function Hero() {
         </div>
       </div>
       <div className="hero-stage">
-        <Viewer selected={selected} mode={mode} explode={explode} autoRotate={selected === null && explode === 0} />
+        <Viewer selected={selected} mode={mode} explode={explode} autoRotate={!touched} onInteract={touch} />
         <div className="controls" role="group" aria-label="Viewer controls">
           <div className="chips">
-            <button className={selected === null ? 'chip on' : 'chip'} onClick={() => setSelected(null)}>All</button>
+            <button className={selected === null ? 'chip on' : 'chip'} onClick={() => { setSelected(null); touch() }}>All</button>
             {subsystems.map((s) => (
-              <button key={s.id} className={selected === s.id ? 'chip on' : 'chip'} onClick={() => setSelected(s.id)}>
+              <button key={s.id} className={selected === s.id ? 'chip on' : 'chip'} onClick={() => { setSelected(s.id); touch() }}>
                 {s.name}
               </button>
             ))}
           </div>
           <div className="row">
             <div className="seg" role="group" aria-label="Other parts">
-              <button className={mode === 'ghost' ? 'on' : ''} onClick={() => setMode('ghost')}>Ghost</button>
-              <button className={mode === 'isolate' ? 'on' : ''} onClick={() => setMode('isolate')}>Isolate</button>
+              <button className={mode === 'ghost' ? 'on' : ''} onClick={() => { setMode('ghost'); touch() }}>Ghost</button>
+              <button className={mode === 'isolate' ? 'on' : ''} onClick={() => { setMode('isolate'); touch() }}>Isolate</button>
             </div>
             <label className="slider">
               Explode
-              <input type="range" min={0} max={0.6} step={0.01} value={explode} onChange={(e) => setExplode(Number(e.target.value))} />
+              <input type="range" min={0} max={0.6} step={0.01} value={explode} onChange={(e) => { setExplode(Number(e.target.value)); touch() }} />
             </label>
           </div>
         </div>

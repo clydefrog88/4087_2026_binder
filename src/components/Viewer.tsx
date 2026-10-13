@@ -87,6 +87,29 @@ function PlaceholderRobot(p: Props) {
 type Entry = { mesh: THREE.Mesh; group: string | null }
 type Node = { obj: THREE.Object3D; group: string; base: THREE.Vector3 }
 
+// Depth-fighting fix. Where two parts have flush (coplanar) faces the GPU cannot decide which
+// is in front, so it flickers between their colors. Each part gets a tiny, fixed depth bias by
+// size rank: smaller parts are pulled slightly toward the camera, so a small part sitting flush
+// in a larger one always wins. Tune with the three constants below.
+const Z_TIERS = 10 // number of size tiers (more tiers = fewer ties between similar-size parts)
+const Z_FACTOR_STEP = -0.5 // slope-scaled bias per tier
+const Z_UNITS_STEP = -1 // constant bias per tier
+
+function applyDepthBias(model: THREE.Object3D, entries: Entry[]) {
+  model.updateMatrixWorld(true)
+  const box = new THREE.Box3()
+  const size = new THREE.Vector3()
+  const diag = entries.map((e) => box.setFromObject(e.mesh).getSize(size).length())
+  const largestFirst = [...diag.keys()].sort((a, b) => diag[b] - diag[a])
+  largestFirst.forEach((idx, rank) => {
+    const tier = Math.floor((rank / entries.length) * Z_TIERS)
+    const mat = entries[idx].mesh.material as THREE.Material
+    mat.polygonOffset = tier > 0
+    mat.polygonOffsetFactor = Z_FACTOR_STEP * tier
+    mat.polygonOffsetUnits = Z_UNITS_STEP * tier
+  })
+}
+
 function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
   const { scene } = useGLTF(url, false)
   const { model, entries, nodes } = useMemo(() => {
@@ -114,6 +137,7 @@ function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
     const box = new THREE.Box3().setFromObject(model)
     const c = box.getCenter(new THREE.Vector3())
     model.position.set(-c.x, -c.y, -box.min.z)
+    applyDepthBias(model, entries)
     return { model, entries, nodes }
   }, [scene])
 
@@ -167,7 +191,7 @@ function Spin({ children, enabled }: { children: React.ReactNode; enabled: boole
   return <group ref={ref}>{children}</group>
 }
 
-export function Viewer(props: Props & { autoRotate?: boolean }) {
+export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () => void }) {
   const { state, url } = useGlbAvailable()
   return (
     <div className="viewer" aria-label="3D robot viewer">
@@ -181,7 +205,13 @@ export function Viewer(props: Props & { autoRotate?: boolean }) {
           </Spin>
           <ContactShadows position={[0, 0, 0]} opacity={0.45} scale={4} blur={2.4} far={2} />
         </Suspense>
-        <OrbitControls enablePan={false} minDistance={1.2} maxDistance={6} maxPolarAngle={Math.PI / 2.05} />
+        <OrbitControls
+          enablePan={false}
+          minDistance={1.2}
+          maxDistance={6}
+          maxPolarAngle={Math.PI / 2.05}
+          onStart={props.onInteract}
+        />
       </Canvas>
       {state === 'no' && <span className="viewer-note">Placeholder model. Add public/models/robot.glb</span>}
     </div>

@@ -37,3 +37,14 @@ The Print button uses the browser print dialog. A print stylesheet makes a light
 1. Create a repo and push to `main`.
 2. In the repo go to Settings, Pages, and set Source to GitHub Actions.
 3. The workflow in `.github/workflows/deploy.yml` builds and deploys on every push.
+
+## Tuning the 3D viewer
+
+All viewer settings are constants in `src/components/Viewer.tsx`:
+
+- Lighting: `environmentIntensity` in `StudioEnv`, plus the `hemisphereLight` and `directionalLight` intensities in `Viewer`.
+- Surface finish: `mat.roughness` and `mat.metalness` in `GlbRobot`.
+- Ghost look: `GHOST_OPACITY`. Highlight color: `ACCENT`.
+- Flicker between flush parts: `Z_TIERS`, `Z_FACTOR_STEP`, `Z_UNITS_STEP` (depth bias by part size).
+
+For instant feedback, run `bun run dev` on your own machine and edit these values; the page updates on save.
