@@ -6,11 +6,14 @@ import * as THREE from 'three'
 import { subsystems } from '../content'
 
 export type ViewMode = 'isolate' | 'ghost'
-type Props = { selected: string | null; mode: ViewMode; explode: number }
+type Props = { selected: string | null; mode: ViewMode; explode: number; edges?: boolean; clip?: number }
 
 const ACCENT = '#3e8d30'
 const BASE_COLOR = '#6d5a8a'
 const GHOST_OPACITY = 0.1
+/** Edges are drawn where adjacent faces differ by more than this many degrees. */
+const EDGE_ANGLE = 30
+const NEAR_MIN = 0.01
 
 const explodeDirs: Record<string, [number, number, number]> = {
   drivetrain: [0, -1, 0],
@@ -132,7 +135,7 @@ function applyDepthBias(model: THREE.Object3D, entries: Entry[]) {
   }
 }
 
-function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
+function GlbRobot({ url, selected, mode, explode, edges = false }: Props & { url: string }) {
   const { scene } = useGLTF(url, false)
   const { model, entries, nodes } = useMemo(() => {
     const model = scene.clone(true)
@@ -167,6 +170,19 @@ function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
     return { model, entries, nodes }
   }, [scene])
 
+  // Edge outlines are built the first time they are switched on (it takes a moment on a big model).
+  const edgeLines = useRef(new Map<THREE.Mesh, THREE.LineSegments>())
+  useEffect(() => {
+    if (!edges || edgeLines.current.size) return
+    const lineMat = new THREE.LineBasicMaterial({ color: '#0b0b12', transparent: true, opacity: 0.7 })
+    for (const { mesh } of entries) {
+      const line = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, EDGE_ANGLE), lineMat.clone())
+      line.raycast = () => {}
+      mesh.add(line)
+      edgeLines.current.set(mesh, line)
+    }
+  }, [edges, entries])
+
   useEffect(() => {
     for (const { mesh, group } of entries) {
       const mat = mesh.material as THREE.MeshStandardMaterial
@@ -177,13 +193,20 @@ function GlbRobot({ url, selected, mode, explode }: Props & { url: string }) {
       mat.depthWrite = s.opacity >= 1
       if (selected && group === selected) mat.emissive.set('#0a2a06')
       else mat.emissive.set('#000000')
+      const line = edgeLines.current.get(mesh)
+      if (line) {
+        line.visible = edges && s.visible
+        const lm = line.material as THREE.LineBasicMaterial
+        lm.opacity = 0.7 * s.opacity
+        lm.depthWrite = false
+      }
     }
     for (const { obj, group, base } of nodes) {
       // Explode directions are defined in world space (Y-up); convert to the Z-up model space.
       const d = explodeDirs[group] ?? [0, 0, 0]
       obj.position.set(base.x + d[0] * explode, base.y - d[2] * explode, base.z + d[1] * explode)
     }
-  }, [entries, nodes, selected, mode, explode])
+  }, [entries, nodes, selected, mode, explode, edges])
 
   return (
     <group rotation={[-Math.PI / 2, 0, 0]}>
@@ -209,6 +232,21 @@ function StudioEnv() {
   return null
 }
 
+/** Slices the model with the camera's near plane. clip 0 = off, 1 = cuts past the orbit center. */
+function Clipper({ clip, controls }: { clip: number; controls: React.RefObject<ComponentRef<typeof OrbitControls> | null> }) {
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+  useFrame(() => {
+    const target = controls.current?.target
+    const dist = target ? camera.position.distanceTo(target) : 3
+    const near = Math.max(NEAR_MIN, clip * (dist + 0.4))
+    if (Math.abs(camera.near - near) > 1e-4) {
+      camera.near = near
+      camera.updateProjectionMatrix()
+    }
+  })
+  return null
+}
+
 function Spin({ children, enabled }: { children: React.ReactNode; enabled: boolean }) {
   const ref = useRef<THREE.Group>(null)
   useFrame((_, dt) => {
@@ -217,13 +255,14 @@ function Spin({ children, enabled }: { children: React.ReactNode; enabled: boole
   return <group ref={ref}>{children}</group>
 }
 
-export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () => void }) {
+export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () => void; onReset?: () => void }) {
   const { state, url } = useGlbAvailable()
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   return (
     <div className="viewer" aria-label="3D robot viewer">
-      <Canvas flat shadows camera={{ position: [1.9, 1.4, 2.2], fov: 38 }} dpr={[1, 2]}>
+      <Canvas flat shadows camera={{ position: [1.9, 1.4, 2.2], fov: 38, near: NEAR_MIN, far: 60 }} dpr={[1, 2]}>
         <StudioEnv />
+        <Clipper clip={props.clip ?? 0} controls={controls} />
         <hemisphereLight args={['#ffffff', '#8a8496', 0.03]} />
         <directionalLight position={[3, 5, 2]} intensity={3.4} castShadow />
         {/* Weak back-left light so shaded sides keep some shape without lifting the blacks. */}
@@ -239,17 +278,18 @@ export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () =>
         <OrbitControls
           ref={controls}
           enablePan
-          minDistance={1.2}
-          maxDistance={6}
+          zoomToCursor
+          minDistance={0}
+          maxDistance={25}
           onStart={props.onInteract}
         />
       </Canvas>
-      <button type="button" className="chip viewer-reset" onClick={() => controls.current?.reset()}>
+      <button type="button" className="chip viewer-reset" onClick={() => { controls.current?.reset(); props.onReset?.() }}>
         Reset view
       </button>
       <span className="viewer-hint">
-        <span className="hint-mouse">Drag: orbit · Scroll: zoom · Right-drag: pan</span>
-        <span className="hint-touch">Drag: orbit · Pinch: zoom · Two fingers: pan</span>
+        <span className="hint-mouse">Drag: orbit · Scroll: zoom to cursor · Right-drag: pan</span>
+        <span className="hint-touch">Drag: orbit · Pinch: zoom in · Two fingers: pan</span>
       </span>
       {state === 'no' && <span className="viewer-note">Placeholder model. Add public/models/robot.glb</span>}
     </div>
