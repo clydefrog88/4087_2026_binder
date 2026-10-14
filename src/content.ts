@@ -27,11 +27,6 @@ export const team = {
   tagline: 'How we designed, built, and competed with our robot.',
   logo: 'logo-full.png', // hero logo, file in /public
   icon: 'logo-icon.png', // nav + favicon, file in /public
-  links: [
-    { label: 'Onshape CAD', href: '#' },
-    { label: 'Code', href: 'https://github.com/frc4087' },
-    { label: 'Chief Delphi thread', href: '#' },
-  ],
 }
 
 export const heroStats: Spec[] = [

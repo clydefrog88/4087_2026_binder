@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import { subsystems } from '../content'
 
 export type ViewMode = 'isolate' | 'ghost'
-type Props = { selected: string | null; mode: ViewMode; explode: number; edges?: boolean; clip?: number }
+type Props = { selected: string | null; mode: ViewMode; explode: number; edges?: boolean }
 
 const ACCENT = '#3e8d30'
 const BASE_COLOR = '#6d5a8a'
@@ -232,21 +232,6 @@ function StudioEnv() {
   return null
 }
 
-/** Slices the model with the camera's near plane. clip 0 = off, 1 = cuts past the orbit center. */
-function Clipper({ clip, controls }: { clip: number; controls: React.RefObject<ComponentRef<typeof OrbitControls> | null> }) {
-  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
-  useFrame(() => {
-    const target = controls.current?.target
-    const dist = target ? camera.position.distanceTo(target) : 3
-    const near = Math.max(NEAR_MIN, clip * (dist + 0.4))
-    if (Math.abs(camera.near - near) > 1e-4) {
-      camera.near = near
-      camera.updateProjectionMatrix()
-    }
-  })
-  return null
-}
-
 function Spin({ children, enabled }: { children: React.ReactNode; enabled: boolean }) {
   const ref = useRef<THREE.Group>(null)
   useFrame((_, dt) => {
@@ -262,7 +247,6 @@ export function Viewer(props: Props & { autoRotate?: boolean; onInteract?: () =>
     <div className="viewer" aria-label="3D robot viewer">
       <Canvas flat shadows camera={{ position: [1.9, 1.4, 2.2], fov: 38, near: NEAR_MIN, far: 60 }} dpr={[1, 2]}>
         <StudioEnv />
-        <Clipper clip={props.clip ?? 0} controls={controls} />
         <hemisphereLight args={['#ffffff', '#8a8496', 0.03]} />
         <directionalLight position={[3, 5, 2]} intensity={3.4} castShadow />
         {/* Weak back-left light so shaded sides keep some shape without lifting the blacks. */}

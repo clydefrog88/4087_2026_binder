@@ -59,7 +59,6 @@ function Nav({ active, dark, onToggleTheme }: { active: string; dark: boolean; o
     <header className="nav">
       <a className="brand" href="#robot" aria-label={`Team ${team.number} home`}>
         <img src={iconUrl} alt="" width={34} height={34} />
-        <span>{team.number}</span>
       </a>
       <nav aria-label="Sections">
         {sections.map((s) => (
@@ -93,7 +92,6 @@ function Hero() {
   const [mode, setMode] = useState<ViewMode>('ghost')
   const [explode, setExplode] = useState(0)
   const [edges, setEdges] = useState(false)
-  const [clip, setClip] = useState(0)
   // Once the visitor touches the model or any control, the idle spin stops for good.
   const [touched, setTouched] = useState(false)
   const touch = () => setTouched(true)
@@ -109,14 +107,9 @@ function Hero() {
             <div key={s.label}><dt>{s.label}</dt><dd>{s.value}</dd></div>
           ))}
         </dl>
-        <div className="links">
-          {team.links.map((l) => (
-            <a key={l.label} className="btn" href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
-          ))}
-        </div>
       </div>
       <div className="hero-stage">
-        <Viewer selected={selected} mode={mode} explode={explode} edges={edges} clip={clip} autoRotate={!touched} onInteract={touch} onReset={() => setClip(0)} />
+        <Viewer selected={selected} mode={mode} explode={explode} edges={edges} autoRotate={!touched} onInteract={touch} />
         <div className="controls" role="group" aria-label="Viewer controls">
           <div className="chips">
             <button className={selected === null ? 'chip on' : 'chip'} onClick={() => { setSelected(null); touch() }}>All</button>
@@ -132,10 +125,6 @@ function Hero() {
               <button className={mode === 'isolate' ? 'on' : ''} onClick={() => { setMode('isolate'); touch() }}>Isolate</button>
             </div>
             <button className={edges ? 'chip on' : 'chip'} aria-pressed={edges} onClick={() => { setEdges(!edges); touch() }}>Edges</button>
-            <label className="slider">
-              Clip
-              <input type="range" min={0} max={1} step={0.005} value={clip} onChange={(e) => { setClip(Number(e.target.value)); touch() }} />
-            </label>
             <label className="slider">
               Explode
               <input type="range" min={0} max={0.6} step={0.01} value={explode} onChange={(e) => { setExplode(Number(e.target.value)); touch() }} />
